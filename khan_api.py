@@ -38,7 +38,7 @@ def create_callback_server(server_address):
     return socketserver.TCPServer(server_address, CallbackHandler)
 
 
-def get_khan_session(username, password, consumer_key, consumer_secret,
+def get_khan_session(consumer_key, consumer_secret, username, password,
                      server_url='http://www.khanacademy.org',
                      callback_address='127.0.0.1:0'):
 
@@ -89,3 +89,28 @@ def get_khan_session(username, password, consumer_key, consumer_secret,
                                        params={'oauth_verifier': VERIFIER})
 
     return session
+
+
+class KhanSession:
+    """Khan Academy API session.
+
+    Loose wrapper class around Khan Academy rauth.OAuth1Session. If no
+    user credentials given, it is a dummy class around request.Session.
+
+    """
+    def __init__(self, server_url='http://www.khanacademy.org',
+                 consumer_key=None, consumer_secret=None,
+                 username=None, password=None,
+                 callback_address='127.0.0.1:0'):
+        self.server_url = server_url
+        if consumer_key and consumer_secret and username and password:
+            self.session = get_khan_session(consumer_key, consumer_secret,
+                                            username, password,
+                                            server_url, callback_address)
+        else:
+            self.session = requests.Session()
+
+    def call_api(self, rel_url, params={}):
+        response = self.session.get(self.server_url + rel_url,
+                                    params=params)
+        return json.loads(response.text)
