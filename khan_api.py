@@ -112,6 +112,11 @@ class KhanSession:
             self.session = requests.Session()
 
     def call_api(self, rel_url, params={}):
+        """Make an API call to relative URL.
+        
+        Returns a parsed JSON response.
+        
+        """
         response = self.session.get(self.server_url + rel_url,
                                     params=params)
         return json.loads(response.text)
