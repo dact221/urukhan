@@ -43,19 +43,17 @@ def get_khan_session(consumer_key, consumer_secret, username, password,
                      server_url='http://www.khanacademy.org',
                      callback_address='127.0.0.1:0'):
 
-    """Create an authenticated Khan Academy API session using rauth
-    OAuth 1.0 flow.
+    """Create an authenticated Khan Academy API session using rauth OAuth 1.0 flow.
 
     This session give you access to the "Login Required" calls described
     in the API Explorer.
 
     You need a consumer key and consumer secret:
 
-    http://www.khanacademy.org/api-apps/register
+        http://www.khanacademy.org/api-apps/register
 
-    You should also provide Khan Academy username and password.
-
-    Only coachs can access information about other users.
+    You should also provide Khan Academy username and password. Only
+    coachs can access information about other users.
 
     """
 
@@ -112,11 +110,29 @@ class KhanSession:
             self.session = requests.Session()
 
     def call_api(self, rel_url, params={}):
-        """Make an API call to relative URL.
+        """Make an API call to a relative URL (e. g., `/api/v1/badges`).
 
         Returns a parsed JSON response.
 
         """
-        response = self.session.get(self.server_url + rel_url,
-                                    params=params)
-        return json.loads(response.text)
+        resp = self.session.get(self.server_url + rel_url, params=params)
+        if resp.text == 'Unauthorized':
+            raise Exception('You are not authorized to retrieve this info.')
+        parsed_resp = json.loads(resp.text)
+        return parsed_resp
+
+    def get_user(self, userid=None, username=None, email=None):
+        """Retrieve data about a user.
+
+        If no argument given, retrieves data about logged-in user. If
+        you are a coach, you can get data about your students.
+
+        userid is preferred over username and email, since it is the
+        only one of these fields that a user can't change.
+
+        Returns a dict containing information about user.
+
+        """
+        params = {'userId': userid, 'username': username, 'email': email}
+        userinfo = self.call_api('/api/v1/user', params)
+        return userinfo
